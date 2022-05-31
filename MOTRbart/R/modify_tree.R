@@ -74,7 +74,7 @@ update_tree = function(y, # Target variable
                        curr_tree,         # The current set of trees (not required if type is stump)
                        node_min_size,     # The minimum size of a node to grow
                        s)                 # probability vector to be used during the growing process
-  {
+{
 
   # Call the appropriate function to get the new tree
   new_tree = switch(type,
@@ -164,7 +164,7 @@ grow_tree = function(X, y, curr_tree, node_min_size, s) {
     if(count_bad_trees == max_bad_trees) {
       curr_tree$var = 1
       return(curr_tree)
-      }
+    }
   }
   # Return new_tree
   return(new_tree)
@@ -212,7 +212,8 @@ prune_tree = function(X, y, curr_tree) {
     }
 
   }# End of bad node to prune while loop
-
+ 
+  
   # Delete these two rows from the tree matrix
   new_tree$tree_matrix = new_tree$tree_matrix[-c(child_left,child_right),,
                                               drop = FALSE]
@@ -222,6 +223,7 @@ prune_tree = function(X, y, curr_tree) {
                                      'child_right',
                                      'split_variable',
                                      'split_value')] = c(1, NA, NA, NA, NA)
+  
 
   # If we're back to a stump no need to call fill_tree_details
   if(nrow(new_tree$tree_matrix) == 1) {
@@ -304,7 +306,7 @@ change_tree = function(X, y, curr_tree, node_min_size) {
     available_values = NULL
 
     new_split_variable = sample(2:ncol(X), 1)
-
+    
     available_values = sort(unique(X[use_node_indices,
                                      new_split_variable]))
 
@@ -414,3 +416,4 @@ swap_tree = function(X, y, curr_tree, node_min_size) {
   return(new_tree)
 
 } # End of swap_tree function
+

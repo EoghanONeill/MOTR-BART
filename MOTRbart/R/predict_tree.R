@@ -1,6 +1,6 @@
 #' @export
 predict_motr_bart = function(object, newdata,
-                         type = c('all', 'median', 'mean')) {
+                             type = c('all', 'median', 'mean')) {
   # Get the means and sds to standardise the covariates from the test data
 
   center = object$center_x
@@ -80,3 +80,4 @@ predict_motr_bart_class = function(object,
   return(out)
 
 } # end of predict function
+

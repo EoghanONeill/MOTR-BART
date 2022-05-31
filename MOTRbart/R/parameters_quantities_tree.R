@@ -89,8 +89,8 @@ simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
 
     # Generate betas  -------------------------------------------------
     beta_hat = rmvnorm(1,
-                 mean = Lambda_node%*%(t(X_node)%*%r_node),
-                 sigma = sigma2*Lambda_node)
+                       mean = Lambda_node%*%(t(X_node)%*%r_node),
+                       sigma = sigma2*Lambda_node)
 
     # Put in just the ones that are useful
     tree$tree_matrix[unique_node_indices[i],'beta_hat'] = paste(beta_hat, collapse = ',')
@@ -122,7 +122,7 @@ update_z = function(y, prediction){
 
 # Get tree priors ---------------------------------------------------------
 
-  get_tree_prior = function(tree, alpha, beta) {
+get_tree_prior = function(tree, alpha, beta) {
 
   # Need to work out the depth of the tree
   # First find the level of each node, then the depth is the maximum of the level
@@ -155,4 +155,5 @@ update_z = function(y, prediction){
 
   return(log_prior)
 
-  }
+}
+
