@@ -400,7 +400,7 @@ TVPbart = function(x,
   s = rep(1/p, p)
 
   # Prior for the beta vector
-  tau_b = ntrees*n
+  tau_b = ntrees
   V = rep(1/tau_b, 1)
   inv_V = 1/V
 
