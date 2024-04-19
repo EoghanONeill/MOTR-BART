@@ -23,11 +23,13 @@ tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b
   unique_node_indices = unique(tree$node_indices)
   log_post = NULL
 
-  # Get the covariates that have been used as a split
-  split_vars_tree <- tree$tree_matrix[which_internal, 'split_variable']
 
   # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
-  if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
+  if (ancestors == FALSE) {
+    # Get the covariates that have been used as a split
+    split_vars_tree <- tree$tree_matrix[which_internal, 'split_variable']
+    lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))
+  }
 
 
 
@@ -84,6 +86,80 @@ tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b
 }
 
 
+TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda, tau_b) {
+
+  # Select the lines that correspond to terminal and internal nodes
+  # which_terminal = which(tree$tree_matrix[,'terminal'] == 1)
+  which_internal = which(tree$tree_matrix[,'terminal'] == 0)
+
+  # Get the node indices for each terminal node
+  curr_X_node_indices = tree$node_indices
+  unique_node_indices = unique(tree$node_indices)
+  log_post = NULL
+
+  # Get the covariates that have been used as a split
+  # split_vars_tree <- tree$tree_matrix[which_internal, 'split_variable']
+
+  # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
+  # if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
+
+  p = ncol(Lmat)
+  invV = diag(p)*inv_V[1]
+  # if (ancestors == 'all covariates') {lm_vars <- 1:ncol(X)}
+  # if (ancestors == TRUE) {get_ancs <- get_ancestors(tree)}
+
+  # Compute the log marginalised likelihood for each terminal node
+  for(i in 1:length(unique_node_indices)) {
+    # if (ancestors == TRUE) {
+    #   lm_vars = c(1, get_ancs[which(get_ancs[,'terminal'] == unique_node_indices[i]), 'ancestor']) # Get the corresponding ancestors of the current terminal node
+    # }
+    # p = length(lm_vars)
+    # invV = diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+
+
+    # V_ = diag(c(V[1], rep(V[2], p - 1)), ncol=p)
+    # invV = diag(p)*inv_V
+    X_node = Lmat[curr_X_node_indices == unique_node_indices[i], ]
+    r_node = R[curr_X_node_indices == unique_node_indices[i]]
+    # Lambda_node_inv = t(X_node)%*%X_node + invV
+    # # Lambda_node = solve(t(X_node)%*%X_node + invV)
+    # # mu_node = Lambda_node%*%((t(X_node))%*%r_node)
+    # mu_node = solve(Lambda_node_inv, t(X_node)%*%r_node)
+    #
+    # # log_post[i] = -0.5 * log(det(V_)) +
+    # #   0.5*log(1/det(Lambda_node_inv)) -
+    # #   (1/(2*sigma2)) * (- t(mu_node)%*%Lambda_node_inv%*%mu_node)
+    #
+    # log_post[i] = -0.5 *  (V[1] + (p-1)*V[2]  ) - 0.5*determinant(Lambda_node_inv, logarithm = TRUE)[[1]][1] -
+    #   (1/(2*sigma2)) * (- t(mu_node)%*%Lambda_node_inv%*%mu_node)
+
+
+    U = chol ( crossprod ( X_node )+ invV )
+    IR = backsolve (U , diag ( p ))
+    # btilde = crossprod ( t ( IR ))%*%( crossprod (X_node , r_node ) )
+    # beta_hat = btilde + sqrt ( sigma2 )* IR %*% rnorm ( p )
+    tmulambinvmu = crossprod ( t ( IR )%*%( crossprod (X_node , r_node ) ) )
+
+    log_post[i] = -0.5 * (p*V[1]  ) -  sum(diag(U)) - #determinant is 2 times det of Choleskey
+      (1/(2*sigma2)) * (- tmulambinvmu)
+
+
+    #
+    # print("log_post = ")
+    # print(log_post)
+    #
+    # print("determinant(V_, logarithm = TRUE)[[1]][1] = ")
+    # print(determinant(V_, logarithm = TRUE)[[1]][1])
+    #
+    # print("determinant(Lambda_node_inv, logarithm = TRUE)[[1]][1] = ")
+    # print(determinant(Lambda_node_inv, logarithm = TRUE)[[1]][1])
+
+
+  }
+  return(sum(log_post))
+}
+
+
 # Simulate_par -------------------------------------------------------------
 
 simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
@@ -99,10 +175,13 @@ simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
   # Wipe all the old parameters out for other nodes
   tree$tree_matrix[,'beta_hat'] = NA
 
-  # Get the covariates that have been used as a split
-  split_vars_tree <- tree$tree_matrix[which_internal, 'split_variable']
+
   # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
-  if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
+  if (ancestors == FALSE) {
+    # Get the covariates that have been used as a split
+    split_vars_tree <- tree$tree_matrix[which_internal, 'split_variable']
+    lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))
+  }
 
   # if (ancestors == 'all covariates') {lm_vars <- 1:ncol(X)}
   if (ancestors == TRUE) {get_ancs <- get_ancestors(tree)}
@@ -120,6 +199,72 @@ simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
     # Lambda_node = chol2inv(chol(t(X_node)%*%X_node + invV))
     #
     # # Generate betas  -------------------------------------------------
+    # # beta_hat = rmvnorm(1,
+    # #                    mean = Lambda_node%*%(t(X_node)%*%r_node),
+    # #                    sigma = sigma2*Lambda_node)
+    #
+    # beta_hat = rmvn(1,
+    #                    mu = Lambda_node%*%(t(X_node)%*%r_node),
+    #                    sigma = sigma2*Lambda_node)
+
+
+    # chol_lambda_inv <- chol(t(X_node)%*%X_node + invV)
+
+    U = chol ( crossprod ( X_node )+ invV )
+    IR = backsolve (U , diag ( p ))
+    btilde = crossprod ( t ( IR ))%*%( crossprod (X_node , r_node ) )
+    beta_hat = btilde + sqrt ( sigma2 )* IR %*% rnorm ( p )
+
+
+
+
+    # Put in just the ones that are useful
+    tree$tree_matrix[unique_node_indices[i],'beta_hat'] = paste(beta_hat, collapse = ',')
+  }
+
+  return(tree)
+}
+
+
+
+
+TVPsimulate_beta = function(tree, Lmat, R, sigma2, inv_V, tau_b, nu) {
+
+  # First find which rows are terminal and internal nodes
+  which_terminal = which(tree$tree_matrix[,'terminal'] == 1)
+  which_internal = which(tree$tree_matrix[,'terminal'] == 0)
+
+  # Get node indices
+  curr_X_node_indices = tree$node_indices
+  unique_node_indices = unique(tree$node_indices)
+
+  # Wipe all the old parameters out for other nodes
+  tree$tree_matrix[,'beta_hat'] = NA
+
+  # # Get the covariates that have been used as a split
+  # split_vars_tree <- tree$tree_matrix[which_internal, 'split_variable']
+  # # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
+  # if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
+  #
+  # # if (ancestors == 'all covariates') {lm_vars <- 1:ncol(X)}
+  # if (ancestors == TRUE) {get_ancs <- get_ancestors(tree)}
+
+  p = ncol(Lmat)
+  invV = diag(p)*inv_V[1]
+
+  for(i in 1:length(unique_node_indices)) {
+    # if (ancestors == TRUE) {
+    #   lm_vars = c(1, get_ancs[which(get_ancs[,'terminal'] == unique_node_indices[i]), 'ancestor']) # Get the corresponding ancestors of the current terminal node
+    # }
+    # p = length(lm_vars)
+    # invV = diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+    # invV = diag(p)*inv_V
+    X_node = Lmat[curr_X_node_indices == unique_node_indices[i], ] # Only variables that have been used as split
+    r_node = R[curr_X_node_indices == unique_node_indices[i]]
+    # # Lambda_node = solve(t(X_node)%*%X_node + invV)
+    # Lambda_node = chol2inv(chol(t(X_node)%*%X_node + invV))
+    #
+    # # TVP Generate betas  -------------------------------------------------
     # # beta_hat = rmvnorm(1,
     # #                    mean = Lambda_node%*%(t(X_node)%*%r_node),
     # #                    sigma = sigma2*Lambda_node)

@@ -63,6 +63,59 @@ create_stump = function(num_trees,
 
 } # End of function
 
+
+
+TVPcreate_stump = function(num_trees,
+                        y,
+                        Lmat) {
+
+  # Each tree is a list of 2 elements
+  # The 2 elements are the tree matrix (8 columns), and the node indices
+  # The columns of the tree matrix are:
+  # Terminal (0 = no, 1 = yes)
+  # Child left
+  # Child right
+  # Node parents
+  # Split variable
+  # Split value
+  # beta hat
+  # Node size
+
+  # Create holder for trees
+  all_trees = vector('list', length = num_trees)
+  # Loop through trees
+  for (j in 1:num_trees) {
+    # Set up each tree to have two elements in the list as described above
+    all_trees[[j]] = vector('list', length = 2)
+    # Give the elements names
+    names(all_trees[[j]]) = c('tree_matrix',
+                              'node_indices')
+    # Create the two elements: first is a matrix
+    all_trees[[j]][[1]] = matrix(NA, ncol = 8, nrow = 1)
+
+    # Second is the assignment to node indices
+    all_trees[[j]][[2]] = rep(1, length(y))
+
+    # Create column names
+    colnames(all_trees[[j]][[1]]) = c('terminal',
+                                      'child_left',
+                                      'child_right',
+                                      'parent',
+                                      'split_variable',
+                                      'split_value',
+                                      'beta_hat',
+                                      'node_size')
+
+    # Set values for stump
+    all_trees[[j]][[1]][1,] = c(1, NA, NA, NA, NA, NA, paste(rep(0, ncol(Lmat)), collapse = ',') , length(y))
+
+  } # End of loop through trees
+
+  return(all_trees)
+
+} # End of function
+
+
 # Function to update trees ------------------------------------------------
 
 update_tree = function(y, # Target variable

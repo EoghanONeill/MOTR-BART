@@ -84,10 +84,12 @@ get_predictions = function(trees, X, single_tree = FALSE, ancestors) {
       # Get the node indices for the current X matrix
       curr_X_node_indices = fill_tree_details(trees, X)$node_indices
       which_internal = which(trees$tree_matrix[,'terminal'] == 0)
-      split_vars_tree <- trees$tree_matrix[which_internal, 'split_variable']
 
       # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
-      if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
+      if (ancestors == FALSE) {
+        split_vars_tree <- trees$tree_matrix[which_internal, 'split_variable']
+        lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))
+      }
       #if (ancestors == 'all covariates') {lm_vars <- 1:ncol(X)}
       if (ancestors == TRUE) {get_ancs <- get_ancestors(trees)}
 
@@ -112,6 +114,66 @@ get_predictions = function(trees, X, single_tree = FALSE, ancestors) {
     predictions = get_predictions(trees[[1]], X, single_tree = TRUE, ancestors)  +
       get_predictions(partial_trees, X,
                       single_tree = length(partial_trees) == 1, ancestors)
+    #single_tree = !is.null(names(partial_trees)))
+    # The above only sets single_tree to if the names of the object is not null (i.e. is a list of lists)
+  }
+
+  return(predictions)
+}
+
+
+
+
+
+TVPget_predictions = function(trees, Lmat, X,  single_tree = FALSE) {
+
+  # Stop nesting problems in case of multiple trees
+  if(is.null(names(trees)) & (length(trees) == 1)) trees = trees[[1]]
+
+  # Normally trees will be a list of lists but just in case
+  if(single_tree) {
+
+    # Deal with just a single tree
+    if(nrow(trees$tree_matrix) == 1) {
+      # predictions = rep(trees$tree_matrix[1, 'mu'], nrow(X))
+      beta_hat = as.numeric(unlist(strsplit(trees$tree_matrix[1, 'beta_hat'],",")))
+      predictions = rep(beta_hat[1], nrow(X))
+
+    } else {
+      # Loop through the node indices to get predictions
+      predictions = rep(NA, nrow(X))
+      unique_node_indices = unique(trees$node_indices)
+      # Get the node indices for the current X matrix
+      curr_X_node_indices = fill_tree_details(trees, X)$node_indices
+      which_internal = which(trees$tree_matrix[,'terminal'] == 0)
+      split_vars_tree <- trees$tree_matrix[which_internal, 'split_variable']
+
+      # # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
+      # if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
+      # #if (ancestors == 'all covariates') {lm_vars <- 1:ncol(X)}
+      # if (ancestors == TRUE) {get_ancs <- get_ancestors(trees)}
+
+      # n = nrow(X)
+
+      # Now loop through all node indices to fill in details
+      for(i in 1:length(unique_node_indices)) {
+        # if (ancestors == TRUE) {
+        #   lm_vars = c(1, get_ancs[which(get_ancs[,'terminal'] == unique_node_indices[i]), 'ancestor']) # Get the corresponding ancestors of the current terminal node
+        # }
+        # X_node = Lmat[curr_X_node_indices == unique_node_indices[i],]
+        beta_hat = as.numeric(unlist(strsplit(trees$tree_matrix[unique_node_indices[i], 'beta_hat'],",")))
+        predictions[curr_X_node_indices == unique_node_indices[i]] =  Lmat[curr_X_node_indices == unique_node_indices[i],]%*%beta_hat
+      }
+    }
+    # More here to deal with more complicated trees - i.e. multiple trees
+  } else {
+
+    # Do a recursive call to the function
+    partial_trees = trees
+    partial_trees[[1]] = NULL # Blank out that element of the list
+    predictions = TVPget_predictions(trees[[1]], Lmat, X, single_tree = TRUE)  +
+      TVPget_predictions(partial_trees, Lmat, X,
+                      single_tree = length(partial_trees) == 1)
     #single_tree = !is.null(names(partial_trees)))
     # The above only sets single_tree to if the names of the object is not null (i.e. is a list of lists)
   }
@@ -346,6 +408,38 @@ update_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 = 1
   return(list(var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
               var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2*sigma2) + b1)))
 }
+
+
+
+TVPupdate_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 = 1, a1 = 1, b1 = 1){
+
+  n_terminal = 0
+  n_vars_terminal = 0
+  # sum_of_squares_inter = 0
+  sum_of_squares_slopes = 0
+
+  for (i in 1:n_tress) {
+    # Get current set of trees
+    tree = trees[[i]]
+    # get the terminal nodes
+    terminal_nodes = as.numeric(which(tree$tree_matrix[,'terminal'] == 1))
+    # get all coefficients of the linear predictors for each terminal node
+    all_coef = strsplit(tree$tree_matrix[terminal_nodes, 'beta_hat'], ',')
+    # get intercepts
+    # inter = as.numeric(unlist(lapply(all_coef, '[', 1)))
+    # get slopes
+    # slopes = as.numeric(unlist(lapply(all_coef, '[', -1)))
+    slopes = as.numeric(unlist(all_coef))
+
+    # n_terminal = n_terminal + length(terminal_nodes)
+    # n_vars_terminal = n_vars_terminal + length(slopes)
+    # sum_of_squares_inter = sum_of_squares_inter + sum(inter^2)
+    sum_of_squares_slopes = sum_of_squares_slopes + sum(slopes^2)
+  }
+  return(list(#var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
+              var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2*sigma2) + b1)))
+}
+
 
 
 
