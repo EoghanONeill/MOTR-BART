@@ -12,5 +12,15 @@ Maintainer: Estevão B. Prado <estevao.prado@hotmail.com>
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-Imports: MASS, mvtnorm, statmod, stats, MCMCpack, truncnorm
-RoxygenNote: 7.1.1
+Imports: 
+    MASS, 
+    mvtnorm, 
+    statmod, 
+    stats, 
+    MCMCpack, 
+    truncnorm,
+    collapse,
+    SoftBart,
+    mvnfast,
+    Rfast
+RoxygenNote: 7.2.0
