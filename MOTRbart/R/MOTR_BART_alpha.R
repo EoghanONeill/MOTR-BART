@@ -499,18 +499,18 @@ TVPbart = function(x,
                                     tau_b) # + get_tree_prior(new_trees[[j]], alpha, beta)
 
 
-      print("l_old = ")
-      print(l_old)
-
-      print("l_new = ")
-      print(l_new)
-
-      print("curr_trees[[j]] = ")
-      print(curr_trees[[j]])
-
-
-      print("new_trees[[j]] = ")
-      print(new_trees[[j]])
+      # print("l_old = ")
+      # print(l_old)
+      #
+      # print("l_new = ")
+      # print(l_new)
+      #
+      # print("curr_trees[[j]] = ")
+      # print(curr_trees[[j]])
+      #
+      #
+      # print("new_trees[[j]] = ")
+      # print(new_trees[[j]])
 
       # # Exponentiate the results above
       # if(type == 'grow'){
