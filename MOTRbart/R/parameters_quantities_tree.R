@@ -66,7 +66,7 @@ tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b
     # beta_hat = btilde + sqrt ( sigma2 )* IR %*% rnorm ( p )
     tmulambinvmu = crossprod ( t ( IR )%*%( crossprod (X_node , r_node ) ) )
 
-    log_post[i] = -0.5 * (V[1] + (p-1)*V[2]  ) -  sum(diag(U)) - #determinant is 2 times det of Choleskey
+    log_post[i] = -0.5 * (log(V[1]) + (p-1)*log(V[2])  ) -  sum(log(diag(U))) - #determinant is 2 times det of Choleskey
       (1/(2*sigma2)) * (- tmulambinvmu)
 
 
@@ -140,7 +140,7 @@ TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda,
     # beta_hat = btilde + sqrt ( sigma2 )* IR %*% rnorm ( p )
     tmulambinvmu = crossprod ( t ( IR )%*%( crossprod (X_node , r_node ) ) )
 
-    log_post[i] = -0.5 * (p*V[1]  ) -  sum(diag(U)) - #determinant is 2 times det of Choleskey
+    log_post[i] = -0.5 * (p*log(V[1])  ) -  sum(log(diag(U))) - #determinant is 2 times det of Choleskey
       (1/(2*sigma2)) * (- tmulambinvmu)
 
 
