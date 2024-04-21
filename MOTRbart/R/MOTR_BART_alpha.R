@@ -92,7 +92,7 @@ motr_bart_alpha = function(x,
   inv_V = 1/V
 
 
-  if(alpha_prior){
+  if(alpha_prior == TRUE){
     alpha_s <- p
   }else{
     alpha_s <- 1
@@ -270,7 +270,7 @@ motr_bart_alpha = function(x,
 
       }
 
-      if(alpha_prior){
+      if(alpha_prior == TRUE){
         alpha_s <- update_alpha(s, alpha_scale, alpha_a, alpha_b, p, s_update[[2]])
       }
     }
@@ -305,7 +305,8 @@ motr_bart_alpha = function(x,
               ancestors = ancestors,
               var_count_store = var_count_store,
               s = s_prob_store,
-              vars_betas = vars_betas_store))
+              vars_betas = vars_betas_store,
+              alpha_s_store = alpha_s_store))
 
 } # End main function
 
@@ -400,7 +401,7 @@ TVPbart = function(x,
   s = rep(1/p, p)
 
   # Prior for the beta vector
-  tau_b = ntrees
+  tau_b = 1 #ntrees*p
   V = rep(1/tau_b, 1)
   inv_V = 1/V
 

@@ -134,6 +134,21 @@ TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda,
     #   (1/(2*sigma2)) * (- t(mu_node)%*%Lambda_node_inv%*%mu_node)
 
 
+    # if(ncol(X_node)==1){
+    #   stop("ncol(X_node)==1")
+    # }
+    #
+    # if(!is.finite(determinant( crossprod ( X_node ) + invV , logarithm = TRUE)[[1]][1])){
+    #   print("X_node = ")
+    #   print(X_node)
+    #
+    #   print("invV = ")
+    #   print(invV)
+    #
+    #   stop("crossprod ( X_node )+ invV  not invertible")
+    # }
+
+
     U = chol ( crossprod ( X_node )+ invV )
     IR = backsolve (U , diag ( p ))
     # btilde = crossprod ( t ( IR ))%*%( crossprod (X_node , r_node ) )
