@@ -535,6 +535,9 @@ prune_tree = function(X, y, curr_tree) {
     # If both are terminal then great
     if( (child_left_terminal == 1) & (child_right_terminal == 1) ) {
       bad_node_to_prune = FALSE # Have chosen a pair of terminal nodes so exist while loop
+    }else {
+      # Remove the node from the terminal node list to avoid sampling this node again
+      terminal_nodes <- terminal_nodes[terminal_nodes != node_to_prune]
     }
 
   }# End of bad node to prune while loop
