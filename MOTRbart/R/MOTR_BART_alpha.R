@@ -375,7 +375,7 @@ TVPbart = function(x,
   # print("nrow(X) = ")
   # print(nrow(X))
   # Extract control parameters
-  node_min_size = node_min_size
+  # node_min_size = node_min_size
 
   # Extract MCMC details
   TotIter = nburn + npost*nthin # Total of iterations
@@ -388,7 +388,7 @@ TVPbart = function(x,
   var_count = rep(0, ncol(X_orig))
   var_count_store = matrix(0, ncol = ncol(X_orig), nrow = store_size)
   s_prob_store = matrix(0, ncol = ncol(X_orig), nrow = store_size)
-  vars_betas_store = matrix(0, ncol = 2, nrow = store_size)
+  vars_betas_store = matrix(0, ncol = 1, nrow = store_size)
   tree_fits_store = matrix(0, ncol = ntrees, nrow = length(y))
   alpha_s_store <- rep(NA, store_size)
 
@@ -406,7 +406,7 @@ TVPbart = function(x,
   inv_V = 1/V
 
 
-  if(alpha_prior){
+  if(alpha_prior == TRUE){
     alpha_s <- p
   }else{
     alpha_s <- 1
@@ -423,7 +423,7 @@ TVPbart = function(x,
   # Create a list of trees for the initial stump
   curr_trees = TVPcreate_stump(num_trees = ntrees,
                             y = y_scale,
-                            Lmatleaf)
+                            Lmat = Lmatleaf)
   # Initialise the new trees as current one
   new_trees = curr_trees
 
@@ -551,11 +551,11 @@ TVPbart = function(x,
       # Update mu whether tree accepted or not
       curr_trees[[j]] = TVPsimulate_beta(curr_trees[[j]],
                                          Lmatleaf,
-                                      current_partial_residuals,
-                                      sigma2,
-                                      inv_V,
-                                      tau_b,
-                                      nu)
+                                         current_partial_residuals,
+                                         sigma2,
+                                         inv_V,
+                                         tau_b,
+                                         nu)
 
       current_fit = TVPget_predictions(curr_trees[[j]], Lmatleaf, X, single_tree = TRUE)
       predictions = predictions - tree_fits_store[,j] # subtract the old fit
@@ -587,7 +587,7 @@ TVPbart = function(x,
 
 
     # Update s = (s_1, ..., s_p), where s_p is the probability that predictor q in 1:p is used to create new terminal nodes
-    if (sparse & (i > floor(nburn * 0.5))) {
+    if ( (sparse ==TRUE) & (i > floor(nburn * 0.5))) {
       s_update <- update_s(var_count, p, alpha_s)
       s <- s_update[[1]]
       if(length(s) != ncol(X_orig)){
@@ -602,10 +602,17 @@ TVPbart = function(x,
 
       }
 
-      if(alpha_prior){
+      if(alpha_prior == TRUE){
         alpha_s <- update_alpha(s, alpha_scale, alpha_a, alpha_b, p, s_update[[2]])
       }
     }
+
+    # if(!is.numeric(V[1])){
+    #   print("V = ")
+    #   print(V)
+    #   stop("!is,numeric(V[1])")
+    # }
+
 
     # If at the right place, store everything
     if((i > nburn) & ((i - nburn) %% nthin) == 0) {
@@ -617,7 +624,9 @@ TVPbart = function(x,
       s_prob_store[curr,] = s
       vars_betas_store[curr,] = V
       alpha_s_store[curr] <- alpha_s
+
     }
+
 
   } # End iterations loop
 

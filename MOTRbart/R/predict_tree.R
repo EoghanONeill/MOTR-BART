@@ -65,7 +65,8 @@ predict_TVPbart = function(object, newdata,
     # Use get_predictions function to get predictions
     y_hat_mat[i,] = TVPget_predictions(curr_trees, Ltest,
                                     newdata,
-                                    single_tree = length(curr_trees) == 2)
+                                    single_tree = length(curr_trees) == 2) +
+      rnorm(n_newX,mean = 0, sd = sqrt(object$vars_betas[i,][1]))
   }
 
   # Sort out what to return

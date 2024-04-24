@@ -83,10 +83,10 @@ get_predictions = function(trees, X, single_tree = FALSE, ancestors) {
       unique_node_indices = unique(trees$node_indices)
       # Get the node indices for the current X matrix
       curr_X_node_indices = fill_tree_details(trees, X)$node_indices
-      which_internal = which(trees$tree_matrix[,'terminal'] == 0)
 
       # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
       if (ancestors == FALSE) {
+        which_internal = which(trees$tree_matrix[,'terminal'] == 0)
         split_vars_tree <- trees$tree_matrix[which_internal, 'split_variable']
         lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))
       }
@@ -137,7 +137,8 @@ TVPget_predictions = function(trees, Lmat, X,  single_tree = FALSE) {
     if(nrow(trees$tree_matrix) == 1) {
       # predictions = rep(trees$tree_matrix[1, 'mu'], nrow(X))
       beta_hat = as.numeric(unlist(strsplit(trees$tree_matrix[1, 'beta_hat'],",")))
-      predictions = rep(beta_hat[1], nrow(X))
+      # predictions = rep(beta_hat[1], nrow(X))
+      predictions <- Lmat%*%beta_hat
 
     } else {
       # Loop through the node indices to get predictions
@@ -145,8 +146,8 @@ TVPget_predictions = function(trees, Lmat, X,  single_tree = FALSE) {
       unique_node_indices = unique(trees$node_indices)
       # Get the node indices for the current X matrix
       curr_X_node_indices = fill_tree_details(trees, X)$node_indices
-      which_internal = which(trees$tree_matrix[,'terminal'] == 0)
-      split_vars_tree <- trees$tree_matrix[which_internal, 'split_variable']
+      # which_internal = which(trees$tree_matrix[,'terminal'] == 0)
+      # split_vars_tree <- trees$tree_matrix[which_internal, 'split_variable']
 
       # # if (ancestors == FALSE) {lm_vars <- c(1, sort(unique(as.numeric(split_vars_tree))))}
       # if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
@@ -432,7 +433,7 @@ TVPupdate_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 
     slopes = as.numeric(unlist(all_coef))
 
     # n_terminal = n_terminal + length(terminal_nodes)
-    # n_vars_terminal = n_vars_terminal + length(slopes)
+    n_vars_terminal = n_vars_terminal + length(slopes)
     # sum_of_squares_inter = sum_of_squares_inter + sum(inter^2)
     sum_of_squares_slopes = sum_of_squares_slopes + sum(slopes^2)
   }

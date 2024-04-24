@@ -60,6 +60,8 @@ tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b
     #   (1/(2*sigma2)) * (- t(mu_node)%*%Lambda_node_inv%*%mu_node)
 
 
+    # see https://www.adamnsmith.com/files/notes/bayes-regression.pdf
+
     U = chol ( crossprod ( X_node )+ invV )
     IR = backsolve (U , diag ( p ))
     # btilde = crossprod ( t ( IR ))%*%( crossprod (X_node , r_node ) )
