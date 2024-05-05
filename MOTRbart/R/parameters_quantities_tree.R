@@ -12,7 +12,7 @@
 # 6. get_number_distinct_cov: counts the number of distinct covariates that are used in a tree to create the splitting rules
 # Compute the full conditionals -------------------------------------------------
 
-tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b, ancestors) {
+tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b, ancestors, coeff_prior_conj) {
 
   # Select the lines that correspond to terminal and internal nodes
   # which_terminal = which(tree$tree_matrix[,'terminal'] == 1)
@@ -42,7 +42,13 @@ tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b
       lm_vars = c(1, get_ancs[which(get_ancs[,'terminal'] == unique_node_indices[i]), 'ancestor']) # Get the corresponding ancestors of the current terminal node
     }
     p = length(lm_vars)
-    invV = diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+
+    if(coeff_prior_conj == TRUE){
+      invV = diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+    }else{
+      invV = sigma2*diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+      V <- V/sigma2
+    }
     # V_ = diag(c(V[1], rep(V[2], p - 1)), ncol=p)
     # invV = diag(p)*inv_V
     X_node = X[curr_X_node_indices == unique_node_indices[i], lm_vars]
@@ -88,7 +94,7 @@ tree_full_conditional = function(tree, X, R, sigma2, V, inv_V, nu, lambda, tau_b
 }
 
 
-TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda, tau_b) {
+TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda, tau_b, coeff_prior_conj) {
 
   # Select the lines that correspond to terminal and internal nodes
   # which_terminal = which(tree$tree_matrix[,'terminal'] == 1)
@@ -106,7 +112,15 @@ TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda,
   # if (ancestors == FALSE) {lm_vars <- c(1, sort_unique(as.numeric(split_vars_tree)))}
 
   p = ncol(Lmat)
-  invV = diag(p)*inv_V[1]
+  # invV = diag(p)*inv_V[1]
+
+  if(coeff_prior_conj == TRUE){
+    invV = diag(p)*inv_V[1]
+  }else{
+    invV = sigma2*diag(p)*inv_V[1]
+    V <- V/sigma2
+  }
+
   # if (ancestors == 'all covariates') {lm_vars <- 1:ncol(X)}
   # if (ancestors == TRUE) {get_ancs <- get_ancestors(tree)}
 
@@ -179,7 +193,7 @@ TVPtree_full_conditional = function(tree, Lmat, R, sigma2, V, inv_V, nu, lambda,
 
 # Simulate_par -------------------------------------------------------------
 
-simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
+simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors, coeff_prior_conj) {
 
   # First find which rows are terminal and internal nodes
   which_terminal = which(tree$tree_matrix[,'terminal'] == 1)
@@ -208,7 +222,13 @@ simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
       lm_vars = c(1, get_ancs[which(get_ancs[,'terminal'] == unique_node_indices[i]), 'ancestor']) # Get the corresponding ancestors of the current terminal node
     }
     p = length(lm_vars)
-    invV = diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+
+    if(coeff_prior_conj == TRUE){
+      invV = diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+    }else{
+      invV = sigma2*diag(c(inv_V[1], rep(inv_V[2], p - 1)), ncol = p)
+    }
+
     # invV = diag(p)*inv_V
     X_node = X[curr_X_node_indices == unique_node_indices[i], lm_vars] # Only variables that have been used as split
     r_node = R[curr_X_node_indices == unique_node_indices[i]]
@@ -245,7 +265,7 @@ simulate_beta = function(tree, X, R, sigma2, inv_V, tau_b, nu, ancestors) {
 
 
 
-TVPsimulate_beta = function(tree, Lmat, R, sigma2, inv_V, tau_b, nu) {
+TVPsimulate_beta = function(tree, Lmat, R, sigma2, inv_V, tau_b, nu, coeff_prior_conj) {
 
   # First find which rows are terminal and internal nodes
   which_terminal = which(tree$tree_matrix[,'terminal'] == 1)
@@ -267,8 +287,12 @@ TVPsimulate_beta = function(tree, Lmat, R, sigma2, inv_V, tau_b, nu) {
   # if (ancestors == TRUE) {get_ancs <- get_ancestors(tree)}
 
   p = ncol(Lmat)
-  invV = diag(p)*inv_V[1]
-
+  # invV = diag(p)*inv_V[1]
+  if(coeff_prior_conj == TRUE){
+    invV = diag(p)*inv_V[1]
+  }else{
+    invV = sigma2*diag(p)*inv_V[1]
+  }
   for(i in 1:length(unique_node_indices)) {
     # if (ancestors == TRUE) {
     #   lm_vars = c(1, get_ancs[which(get_ancs[,'terminal'] == unique_node_indices[i]), 'ancestor']) # Get the corresponding ancestors of the current terminal node

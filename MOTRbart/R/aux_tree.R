@@ -382,7 +382,7 @@ update_alpha <- function(s, alpha_scale, alpha_a, alpha_b, p, mean_log_s) {
 
 
 
-update_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 = 1, a1 = 1, b1 = 1){
+update_vars_intercepts_slopes <- function(trees, n_tress, sigma2, coeff_prior_conj, a0 = 1, b0 = 1, a1 = 1, b1 = 1){
 
   n_terminal = 0
   n_vars_terminal = 0
@@ -406,13 +406,21 @@ update_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 = 1
     sum_of_squares_inter = sum_of_squares_inter + sum(inter^2)
     sum_of_squares_slopes = sum_of_squares_slopes + sum(slopes^2)
   }
-  return(list(var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
-              var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2*sigma2) + b1)))
+
+  if(coeff_prior_conj == TRUE){
+    return(list(var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
+                var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2*sigma2) + b1)))
+  }else{
+    return(list(var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2) + b0),
+                var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2) + b1)))
+  }
+
+
 }
 
 
 
-TVPupdate_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 = 1, a1 = 1, b1 = 1){
+TVPupdate_vars_intercepts_slopes <- function(trees, n_tress, sigma2, coeff_prior_conj, a0 = 1, b0 = 1, a1 = 1, b1 = 1){
 
   n_terminal = 0
   n_vars_terminal = 0
@@ -437,8 +445,13 @@ TVPupdate_vars_intercepts_slopes <- function(trees, n_tress, sigma2, a0 = 1, b0 
     # sum_of_squares_inter = sum_of_squares_inter + sum(inter^2)
     sum_of_squares_slopes = sum_of_squares_slopes + sum(slopes^2)
   }
-  return(list(#var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
-              var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2*sigma2) + b1)))
+  if(coeff_prior_conj == TRUE){
+    return(list(#var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
+                var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2*sigma2) + b1)))
+  }else{
+    return(list(#var_inter = rgamma(1, (n_terminal/2) + a0, sum_of_squares_inter/(2*sigma2) + b0),
+      var_slopes = rgamma(1, (n_vars_terminal/2) + a1, sum_of_squares_slopes/(2) + b1)))
+  }
 }
 
 

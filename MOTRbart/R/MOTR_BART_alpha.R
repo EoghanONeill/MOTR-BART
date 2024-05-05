@@ -29,7 +29,11 @@ motr_bart_alpha = function(x,
                            trans_prob = c(2.5, 2.5, 4) / 9, # Probabilities to grow, prune or change, respectively
                            alpha_prior = FALSE,
                            max_bad_trees = 10,
-                           splitting_rules = "discrete") {
+                           splitting_rules = "discrete",
+                           coeff_prior_conj = TRUE,
+                           k = 2,
+                           sigquant = .90,
+                           centre_y = TRUE) {
 
 
   if(nrow(x) != length(y)){
@@ -87,7 +91,23 @@ motr_bart_alpha = function(x,
   s = rep(1/p, p)
 
   # Prior for the beta vector
+
+  if(centre_y){
+    y_max <- max(y_scale)
+    y_min <- min(y_scale)
+  }else{
+    y_max <- 0
+    y_min <- 0
+  }
+  y_scale <- y_scale - (y_max + y_min)/2
+
+  sigma2_beta <- (max(y_scale)-min(y_scale))/((2 * k * sqrt(ntrees))^2)
+
   tau_b = ntrees
+
+  if(coeff_prior_conj == FALSE){
+    tau_b <- 1/sigma2_beta
+  }
   V = rep(1/tau_b, 2)
   inv_V = 1/V
 
@@ -99,6 +119,28 @@ motr_bart_alpha = function(x,
   }
   alpha_scale <- p
 
+
+
+
+
+
+
+
+  if( coeff_prior_conj == FALSE ) {
+    if(p < n) {
+      df = data.frame(x,y_scale)
+      lmf = lm(y_scale~.,df)
+      sigest = summary(lmf)$sigma
+    } else {
+      sigest = sd(y_scale)
+    }
+
+    qchi = qchisq(1.0-sigquant,nu)
+    lambda = (sigest*sigest*qchi)/nu #lambda parameter for sigma prior
+
+
+    sigma2 <- sigest^2
+  }
 
   # print("line 128")
 
@@ -167,7 +209,8 @@ motr_bart_alpha = function(x,
                                     nu,
                                     lambda,
                                     tau_b,
-                                    ancestors) # + get_tree_prior(curr_trees[[j]], alpha, beta)
+                                    ancestors,
+                                    coeff_prior_conj) # + get_tree_prior(curr_trees[[j]], alpha, beta)
 
       # NEW TREE: compute the log of the marginalised likelihood + log of the tree prior
       l_new = tree_full_conditional(new_trees[[j]],
@@ -179,7 +222,8 @@ motr_bart_alpha = function(x,
                                     nu,
                                     lambda,
                                     tau_b,
-                                    ancestors) # + get_tree_prior(new_trees[[j]], alpha, beta)
+                                    ancestors,
+                                    coeff_prior_conj) # + get_tree_prior(new_trees[[j]], alpha, beta)
 
       # # Exponentiate the results above
       # if(type == 'grow'){
@@ -224,7 +268,8 @@ motr_bart_alpha = function(x,
                                       inv_V,
                                       tau_b,
                                       nu,
-                                      ancestors)
+                                      ancestors,
+                                      coeff_prior_conj)
 
       current_fit = get_predictions(curr_trees[[j]], X, single_tree = TRUE, ancestors)
       predictions = predictions - tree_fits_store[,j] # subtract the old fit
@@ -242,8 +287,8 @@ motr_bart_alpha = function(x,
     sigma2 = update_sigma2(sum_of_squares, n = length(y_scale), nu, lambda)
 
     # Update sigma2_beta0 and sigma2_beta1
-    if (vars_inter_slope == 'TRUE') {
-      vars_betas = update_vars_intercepts_slopes(curr_trees, ntrees, sigma2)
+    if (vars_inter_slope == TRUE) {
+      vars_betas = update_vars_intercepts_slopes(curr_trees, ntrees, sigma2, coeff_prior_conj)
       V = 1/c(vars_betas$var_inter, vars_betas$var_slopes)
       inv_V = 1/V
     }
@@ -293,7 +338,7 @@ motr_bart_alpha = function(x,
 
   return(list(trees = tree_store,
               sigma2 = sigma2_store*y_sd^2,
-              y_hat = y_hat_store*y_sd + y_mean,
+              y_hat = (y_hat_store + (y_max + y_min)/2 )*y_sd + y_mean,
               center_x = center,
               scale_x = scale,
               npost = npost,
@@ -306,7 +351,9 @@ motr_bart_alpha = function(x,
               var_count_store = var_count_store,
               s = s_prob_store,
               vars_betas = vars_betas_store,
-              alpha_s_store = alpha_s_store))
+              alpha_s_store = alpha_s_store,
+              y_max = y_max,
+              y_min = y_min))
 
 } # End main function
 
@@ -343,7 +390,11 @@ TVPbart = function(x,
                            trans_prob = c(2.5, 2.5, 4) / 9, # Probabilities to grow, prune or change, respectively
                            alpha_prior = FALSE,
                            max_bad_trees = 10,
-                           splitting_rules = "discrete") {
+                           splitting_rules = "discrete",
+                   coeff_prior_conj = TRUE,
+                   k = 2,
+                   sigquant = .90,
+                   centre_y = TRUE) {
 
 
   if(nrow(x) != length(y)){
@@ -401,7 +452,15 @@ TVPbart = function(x,
   s = rep(1/p, p)
 
   # Prior for the beta vector
+
+  sigma2_beta <- (max(y_scale)-min(y_scale))/((2 * k * sqrt(ntrees*p))^2)
+
   tau_b = 1 #ntrees*p
+
+  if(coeff_prior_conj == FALSE){
+    tau_b <- 1/sigma2_beta
+  }
+
   V = rep(1/tau_b, 1)
   inv_V = 1/V
 
@@ -486,7 +545,8 @@ TVPbart = function(x,
                                     inv_V,
                                     nu,
                                     lambda,
-                                    tau_b) # + get_tree_prior(curr_trees[[j]], alpha, beta)
+                                    tau_b,
+                                    coeff_prior_conj) # + get_tree_prior(curr_trees[[j]], alpha, beta)
 
       # NEW TREE: compute the log of the marginalised likelihood + log of the tree prior
       l_new = TVPtree_full_conditional(new_trees[[j]],
@@ -497,7 +557,8 @@ TVPbart = function(x,
                                     inv_V,
                                     nu,
                                     lambda,
-                                    tau_b) # + get_tree_prior(new_trees[[j]], alpha, beta)
+                                    tau_b,
+                                    coeff_prior_conj) # + get_tree_prior(new_trees[[j]], alpha, beta)
 
 
       # print("l_old = ")
@@ -555,7 +616,8 @@ TVPbart = function(x,
                                          sigma2,
                                          inv_V,
                                          tau_b,
-                                         nu)
+                                         nu,
+                                         coeff_prior_conj)
 
       current_fit = TVPget_predictions(curr_trees[[j]], Lmatleaf, X, single_tree = TRUE)
       predictions = predictions - tree_fits_store[,j] # subtract the old fit
@@ -573,8 +635,8 @@ TVPbart = function(x,
     sigma2 = update_sigma2(sum_of_squares, n = length(y_scale), nu, lambda)
 
     # Update sigma2_beta0 and sigma2_beta1
-    if (vars_inter_slope == 'TRUE') {
-      vars_betas = TVPupdate_vars_intercepts_slopes(curr_trees, ntrees, sigma2)
+    if (vars_inter_slope == TRUE) {
+      vars_betas = TVPupdate_vars_intercepts_slopes(curr_trees, ntrees, sigma2, coeff_prior_conj)
       V = 1/c(#vars_betas$var_inter,
               vars_betas$var_slopes)
       inv_V = 1/V
