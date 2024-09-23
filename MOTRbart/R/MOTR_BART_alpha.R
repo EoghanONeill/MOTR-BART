@@ -30,7 +30,7 @@ motr_bart_alpha = function(x,
                            alpha_prior = FALSE,
                            max_bad_trees = 10,
                            splitting_rules = "discrete",
-                           coeff_prior_conj = TRUE,
+                           coeff_prior_conj = FALSE,
                            k = 2,
                            sigquant = .90,
                            centre_y = TRUE) {
@@ -391,7 +391,7 @@ TVPbart = function(x,
                            alpha_prior = FALSE,
                            max_bad_trees = 10,
                            splitting_rules = "discrete",
-                   coeff_prior_conj = TRUE,
+                   coeff_prior_conj = FALSE,
                    k = 2,
                    sigquant = .90,
                    centre_y = TRUE) {
@@ -451,7 +451,17 @@ TVPbart = function(x,
   p = ncol(X_orig)
   s = rep(1/p, p)
 
+  if(centre_y){
+    y_max <- max(y_scale)
+    y_min <- min(y_scale)
+  }else{
+    y_max <- 0
+    y_min <- 0
+  }
+  y_scale <- y_scale - (y_max + y_min)/2
+
   # Prior for the beta vector
+  # sigma2_beta <- (max(y_scale)-min(y_scale))/((2 * k * sqrt(ntrees))^2)
 
   sigma2_beta <- (max(y_scale)-min(y_scale))/((2 * k * sqrt(ntrees*p))^2)
 
@@ -696,7 +706,7 @@ TVPbart = function(x,
 
   return(list(trees = tree_store,
               sigma2 = sigma2_store*y_sd^2,
-              y_hat = y_hat_store*y_sd + y_mean,
+              y_hat =(y_hat_store + (y_max + y_min)/2 )*y_sd + y_mean, # y_hat_store*y_sd + y_mean,
               center_x = center,
               scale_x = scale,
               npost = npost,
@@ -709,7 +719,9 @@ TVPbart = function(x,
               var_count_store = var_count_store,
               s = s_prob_store,
               vars_betas = vars_betas_store,
-              ntrain = n))
+              ntrain = n,
+              y_max = y_max,
+              y_min = y_min))
 
 } # End main function
 
